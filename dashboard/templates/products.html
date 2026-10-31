@@ -101,7 +101,7 @@
                         </a>
 
                         <form method="POST"
-                              action="{% url 'delete_product' product.id %}"
+                              action="{% url 'delete_product' product.id %}" class="delete-form"
                               class="d-inline">
                             {% csrf_token %}
                             <button type="submit"

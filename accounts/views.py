@@ -102,10 +102,10 @@ def staff_required(view_func):
     def wrapper(request, *args, **kwargs):
 
         if not (
-    request.user.is_superuser
-    or request.user.role in ['ADMIN', 'STAFF']
-):
-    raise PermissionDenied
+            request.user.is_superuser
+            or request.user.role in ['ADMIN', 'STAFF']
+        ):
+            raise PermissionDenied
 
         return view_func(request, *args, **kwargs)
 

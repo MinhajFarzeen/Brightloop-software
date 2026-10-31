@@ -1,66 +1,46 @@
-from django.urls import path
-from django.contrib.auth import views as auth_views
+from django.db import models
 
-from . import views
 
-urlpatterns = [
+class Product(models.Model):
+    PRODUCT_TYPES = [
+        ('SOFTWARE', 'Software'),
+        ('SERVICE', 'Service'),
+        ('ADDON', 'Add-on'),
+        ('OTHER', 'Other'),
+    ]
 
-    path(
-        'register/',
-        views.register,
-        name='register'
-    ),
+    name = models.CharField(max_length=200)
+    product_type = models.CharField(
+        max_length=20,
+        choices=PRODUCT_TYPES,
+        default='SOFTWARE'
+    )
+    sales_price = models.DecimalField(max_digits=10, decimal_places=2)
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
-    path(
-        'login/',
-        views.user_login,
-        name='login'
-    ),
+    def _str_(self):
+        return self.name
 
-    path(
-        'logout/',
-        views.user_logout,
-        name='logout'
-    ),
 
-    path(
-        'create-staff/',
-        views.create_staff,
-        name='create_staff'
-    ),
+class ProductVariant(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='variants'
+    )
+    name = models.CharField(max_length=150)
+    additional_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
 
-    path(
-        'password-reset/',
-        auth_views.PasswordResetView.as_view(
-            template_name='password_reset.html',
-            email_template_name='password_reset_email.html',
-            success_url='/accounts/password-reset/done/'
-        ),
-        name='password_reset'
-    ),
+    @property
+    def final_price(self):
+        return self.product.sales_price + self.additional_price
 
-    path(
-        'password-reset/done/',
-        auth_views.PasswordResetDoneView.as_view(
-            template_name='password_reset_done.html'
-        ),
-        name='password_reset_done'
-    ),
-
-    path(
-        'reset/<uidb64>/<token>/',
-        auth_views.PasswordResetConfirmView.as_view(
-            template_name='password_reset_confirm.html',
-            success_url='/accounts/reset/done/'
-        ),
-        name='password_reset_confirm'
-    ),
-
-    path(
-        'reset/done/',
-        auth_views.PasswordResetCompleteView.as_view(
-            template_name='password_reset_complete.html'
-        ),
-        name='password_reset_complete'
-    ),
-]
+    def _str_(self):
+        return f"{self.product.name} - {self.name}"
