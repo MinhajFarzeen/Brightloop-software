@@ -1,0 +1,300 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Brightloop{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% if error %}
+
+<div class="alert alert-danger">{{ error }}</div>
+
+{% else %}
+
+<div class="page-header">
+    <div>
+        <h2>Dashboard</h2>
+        <p>Welcome back, {{ user.username }}. Here's your overview.</p>
+    </div>
+    <span class="text-muted">{{ today|default:"Brightloop Overview" }}</span>
+</div>
+
+{% if customer_dashboard %}
+
+<!-- CUSTOMER DASHBOARD -->
+
+<div class="row g-3">
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-arrow-repeat"></i>
+            <p>Total Subscriptions</p>
+            <h3>{{ total_subscriptions }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-check-circle"></i>
+            <p>Active Subscriptions</p>
+            <h3>{{ active_subscriptions }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-receipt"></i>
+            <p>Total Invoices</p>
+            <h3>{{ total_invoices }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-wallet2"></i>
+            <p>Total Paid</p>
+            <h3>₹{{ total_paid }}</h3>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mt-2">
+
+    <div class="col-md-6">
+        <div class="content-card">
+            <h5>Outstanding Balance</h5>
+            <h2 class="text-danger">₹{{ total_due }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="content-card">
+            <h5>Pending Invoices</h5>
+            <h2>{{ pending_invoices }}</h2>
+        </div>
+    </div>
+
+</div>
+
+<div class="content-card mt-4">
+
+    <h5>Recent Invoices</h5>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Invoice</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for invoice in recent_invoices %}
+            <tr>
+                <td>{{ invoice.invoice_number }}</td>
+                <td>{{ invoice.due_date }}</td>
+                <td>₹{{ invoice.total_amount }}</td>
+                <td>{{ invoice.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No invoices available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% else %}
+
+<!-- ADMIN / STAFF DASHBOARD -->
+
+<div class="row g-3">
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-currency-rupee"></i>
+            <p>Total Revenue</p>
+            <h3>₹{{ total_revenue }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-arrow-repeat"></i>
+            <p>Active Subscriptions</p>
+            <h3>{{ active_subscriptions }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-people"></i>
+            <p>Total Customers</p>
+            <h3>{{ total_customers }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-exclamation-circle"></i>
+            <p>Overdue Invoices</p>
+            <h3>{{ overdue_count }}</h3>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mt-2">
+
+    <div class="col-md-4">
+        <div class="content-card">
+            <p class="text-muted">This Month's Revenue</p>
+            <h3>₹{{ current_month_revenue }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="content-card">
+            <p class="text-muted">Total Invoices</p>
+            <h3>{{ total_invoices }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="content-card">
+            <p class="text-muted">Outstanding Amount</p>
+            <h3 class="text-danger">₹{{ total_outstanding }}</h3>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mt-2">
+
+    <div class="col-lg-7">
+
+        <div class="content-card h-100">
+
+            <h5>Monthly Revenue</h5>
+
+            <div class="table-responsive">
+                <table class="table">
+
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in monthly_revenue %}
+                        <tr>
+                            <td>{{ item.month|date:"F Y" }}</td>
+                            <td>₹{{ item.revenue }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2">No revenue data available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-5">
+
+        <div class="content-card h-100">
+
+            <h5>Subscription Summary</h5>
+
+            <div class="d-flex justify-content-between py-2">
+                <span>Active</span>
+                <strong>{{ active_subscriptions }}</strong>
+            </div>
+
+            <div class="d-flex justify-content-between py-2">
+                <span>Paused</span>
+                <strong>{{ paused_subscriptions }}</strong>
+            </div>
+
+            <div class="d-flex justify-content-between py-2">
+                <span>Closed</span>
+                <strong>{{ closed_subscriptions }}</strong>
+            </div>
+
+            <div class="d-flex justify-content-between py-2">
+                <span>Draft</span>
+                <strong>{{ draft_subscriptions }}</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="content-card mt-4">
+
+    <h5>Recent Payments</h5>
+
+    <div class="table-responsive">
+
+        <table class="table">
+
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Invoice</th>
+                    <th>Payment Date</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for payment in recent_payments %}
+
+                <tr>
+                    <td>{{ payment.invoice.customer.username }}</td>
+                    <td>{{ payment.invoice.invoice_number }}</td>
+                    <td>{{ payment.payment_date }}</td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td>₹{{ payment.amount }}</td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="5" class="text-center">
+                        No payments recorded yet.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

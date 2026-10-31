@@ -1,0 +1,130 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Products | Brightloop{% endblock %}
+{% block breadcrumb %}Products{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Product Management</h2>
+        <p>Manage your products and variants.</p>
+    </div>
+
+    <a href="{% url 'add_product' %}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Add Product
+    </a>
+</div>
+
+{% if form %}
+
+<div class="content-card mb-4">
+    <h5>{{ action }}</h5>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label">{{ field.label }}</label>
+                {{ field }}
+
+                {% for error in field.errors %}
+                    <small class="text-danger d-block">{{ error }}</small>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-success">
+            Save
+        </button>
+
+        <a href="{% url 'products' %}" class="btn btn-secondary">
+            Cancel
+        </a>
+    </form>
+</div>
+
+{% else %}
+
+<div class="content-card">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Sales Price</th>
+                    <th>Cost Price</th>
+                    <th>Variants</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td><strong>{{ product.name }}</strong></td>
+                    <td>{{ product.get_product_type_display }}</td>
+                    <td>₹{{ product.sales_price }}</td>
+                    <td>₹{{ product.cost_price }}</td>
+
+                    <td>
+                        {% for variant in product.variants.all %}
+                            <span class="badge bg-light text-dark">
+                                {{ variant.name }} (+₹{{ variant.additional_price }})
+                            </span>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+
+                    <td>
+                        {% if product.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a href="{% url 'edit_product' product.id %}"
+                           class="btn btn-sm btn-outline-primary">
+                            Edit
+                        </a>
+
+                        <a href="{% url 'add_variant' product.id %}"
+                           class="btn btn-sm btn-outline-success">
+                            Variant
+                        </a>
+
+                        <form method="POST"
+                              action="{% url 'delete_product' product.id %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete this product?')">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        No products found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

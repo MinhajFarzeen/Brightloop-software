@@ -1,0 +1,230 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Subscriptions | Brightloop{% endblock %}
+{% block breadcrumb %}Subscriptions{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Subscriptions</h2>
+        <p>Manage customer subscriptions.</p>
+    </div>
+
+    <a href="{% url 'create_subscription' %}"
+       class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> New Subscription
+    </a>
+</div>
+
+{% if form %}
+
+<div class="content-card">
+    <h5>{{ action }}</h5>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+
+            {% for error in field.errors %}
+                <small class="text-danger d-block">{{ error }}</small>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <button class="btn btn-success" type="submit">
+            Create Subscription
+        </button>
+
+        <a href="{% url 'subscriptions' %}"
+           class="btn btn-secondary">
+            Cancel
+        </a>
+    </form>
+</div>
+
+{% elif detail_view %}
+
+<div class="content-card">
+
+    <h4>{{ subscription.subscription_number }}</h4>
+
+    <p><strong>Customer:</strong> {{ subscription.customer.username }}</p>
+    <p><strong>Plan:</strong> {{ subscription.plan.name }}</p>
+    <p><strong>Start:</strong> {{ subscription.start_date }}</p>
+    <p><strong>Expiry:</strong> {{ subscription.expiry_date }}</p>
+    <p><strong>Payment terms:</strong> {{ subscription.payment_terms }}</p>
+    <p><strong>Status:</strong> {{ subscription.get_status_display }}</p>
+
+    <h5 class="mt-4">Subscription Products</h5>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Variant</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for line in subscription.lines.all %}
+            <tr>
+                <td>{{ line.product.name }}</td>
+                <td>{{ line.variant.name|default:"-" }}</td>
+                <td>{{ line.quantity }}</td>
+                <td>₹{{ line.unit_price }}</td>
+                <td>₹{{ line.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if user.role == 'ADMIN' or user.role == 'STAFF' or user.is_superuser %}
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+
+        {% for status, label in subscription.STATUS_CHOICES %}
+            {% if status in subscription.status|default:''|slice:":0" %}
+            {% endif %}
+        {% endfor %}
+
+        {% if subscription.status == 'DRAFT' %}
+            <form method="POST" action="{% url 'change_subscription_status' subscription.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="QUOTATION">
+                <button class="btn btn-primary">Send Quotation</button>
+            </form>
+        {% elif subscription.status == 'QUOTATION' %}
+            <form method="POST" action="{% url 'change_subscription_status' subscription.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="CONFIRMED">
+                <button class="btn btn-primary">Confirm</button>
+            </form>
+        {% elif subscription.status == 'CONFIRMED' %}
+            <form method="POST" action="{% url 'change_subscription_status' subscription.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="ACTIVE">
+                <button class="btn btn-success">Activate</button>
+            </form>
+        {% elif subscription.status == 'ACTIVE' %}
+            <form method="POST" action="{% url 'change_subscription_status' subscription.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="PAUSED">
+                <button class="btn btn-warning">Pause</button>
+            </form>
+        {% elif subscription.status == 'PAUSED' %}
+            <form method="POST" action="{% url 'change_subscription_status' subscription.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="ACTIVE">
+                <button class="btn btn-success">Resume</button>
+            </form>
+        {% endif %}
+
+        {% if subscription.status != 'CLOSED' %}
+        <form method="POST" action="{% url 'change_subscription_status' subscription.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="CLOSED">
+            <button class="btn btn-danger">Close</button>
+        </form>
+        {% endif %}
+
+        {% if subscription.status == 'ACTIVE' or subscription.status == 'CLOSED' %}
+        <form method="POST" action="{% url 'renew_subscription' subscription.id %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-success">Renew</button>
+        </form>
+        {% endif %}
+
+        {% if subscription.status == 'ACTIVE' %}
+        <form method="POST" action="{% url 'generate_invoice' subscription.id %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary">Generate Invoice</button>
+        </form>
+        {% endif %}
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+<a href="{% url 'subscriptions' %}" class="btn btn-secondary mt-3">
+    Back to Subscriptions
+</a>
+
+{% else %}
+
+<div class="content-card">
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+
+            <thead>
+                <tr>
+                    <th>Subscription ID</th>
+                    <th>Customer</th>
+                    <th>Plan</th>
+                    <th>Start Date</th>
+                    <th>Expiry Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for subscription in subscriptions %}
+
+                <tr>
+                    <td>{{ subscription.subscription_number }}</td>
+                    <td>{{ subscription.customer.username }}</td>
+                    <td>{{ subscription.plan.name }}</td>
+                    <td>{{ subscription.start_date }}</td>
+                    <td>{{ subscription.expiry_date }}</td>
+
+                    <td>
+                        <span class="badge
+                        {% if subscription.status == 'ACTIVE' %}bg-success
+                        {% elif subscription.status == 'CLOSED' %}bg-secondary
+                        {% elif subscription.status == 'PAUSED' %}bg-warning text-dark
+                        {% else %}bg-info{% endif %}">
+                            {{ subscription.get_status_display }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <a href="{% url 'subscription_detail' subscription.id %}"
+                           class="btn btn-sm btn-outline-primary">
+                            View
+                        </a>
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="7" class="text-center">
+                        No subscriptions found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

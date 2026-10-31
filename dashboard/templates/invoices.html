@@ -1,0 +1,408 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Billing | Brightloop{% endblock %}
+{% block breadcrumb %}Billing{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Billing Management</h2>
+        <p>Manage invoices, payments, taxes and discounts.</p>
+    </div>
+</div>
+
+<!-- BILLING NAVIGATION -->
+
+<div class="d-flex gap-2 flex-wrap mb-4">
+
+    <a href="{% url 'invoices' %}"
+       class="btn btn-outline-success">
+        Invoices
+    </a>
+
+    <a href="{% url 'taxes' %}"
+       class="btn btn-outline-success">
+        Taxes
+    </a>
+
+    <a href="{% url 'discounts' %}"
+       class="btn btn-outline-success">
+        Discounts
+    </a>
+
+</div>
+
+
+<!-- TAX FORM -->
+
+{% if tax_form %}
+
+<div class="content-card">
+
+    <h5>Add Tax</h5>
+
+    <form method="POST" action="{% url 'taxes' %}add/">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Tax Name</label>
+            <input type="text" name="name"
+                   class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Tax Percentage</label>
+            <input type="number" name="rate"
+                   step="0.01" min="0" max="100"
+                   class="form-control" required>
+        </div>
+
+        <button class="btn btn-success">Save Tax</button>
+    </form>
+
+</div>
+
+{% endif %}
+
+
+<!-- TAX LIST -->
+
+{% if taxes %}
+
+<div class="content-card">
+
+    <div class="d-flex justify-content-between mb-3">
+        <h5>Tax Rules</h5>
+
+        {% if user.role == 'ADMIN' or user.is_superuser %}
+        <a href="{% url 'taxes' %}add/"
+           class="btn btn-success btn-sm">
+            Add Tax
+        </a>
+        {% endif %}
+    </div>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Tax Name</th>
+                <th>Rate</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for tax in taxes %}
+            <tr>
+                <td>{{ tax.name }}</td>
+                <td>{{ tax.rate }}%</td>
+                <td>
+                    {% if tax.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No tax rules found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endif %}
+
+
+<!-- DISCOUNT FORM -->
+
+{% if discount_form %}
+
+<div class="content-card">
+
+    <h5>Create Discount</h5>
+
+    <form method="POST" action="{% url 'discounts' %}add/">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Discount Name</label>
+            <input type="text" name="name"
+                   class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Discount Type</label>
+
+            <select name="discount_type" class="form-select">
+                <option value="FIXED">Fixed Amount</option>
+                <option value="PERCENTAGE">Percentage</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Discount Value</label>
+            <input type="number" name="value"
+                   step="0.01" min="0.01"
+                   class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Minimum Purchase</label>
+            <input type="number" name="minimum_purchase"
+                   step="0.01" value="0"
+                   class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Minimum Quantity</label>
+            <input type="number" name="minimum_quantity"
+                   value="1" min="1"
+                   class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Start Date</label>
+            <input type="date" name="start_date"
+                   class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">End Date</label>
+            <input type="date" name="end_date"
+                   class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Usage Limit</label>
+            <input type="number" name="usage_limit"
+                   min="1" class="form-control"
+                   placeholder="Leave blank for unlimited">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Applicable Products</label>
+
+            <select name="products" multiple class="form-select">
+                {% for product in products %}
+                <option value="{{ product.id }}">
+                    {{ product.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <small class="text-muted">
+                Leave unselected to apply to all products.
+            </small>
+        </div>
+
+        <button class="btn btn-success">Save Discount</button>
+
+    </form>
+
+</div>
+
+{% endif %}
+
+
+<!-- DISCOUNT LIST -->
+
+{% if discounts %}
+
+<div class="content-card">
+
+    <div class="d-flex justify-content-between mb-3">
+        <h5>Discount Rules</h5>
+
+        {% if user.role == 'ADMIN' or user.is_superuser %}
+        <a href="{% url 'discounts' %}add/"
+           class="btn btn-success btn-sm">
+            Add Discount
+        </a>
+        {% endif %}
+    </div>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Usage</th>
+                <th>Validity</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for discount in discounts %}
+
+            <tr>
+                <td>{{ discount.name }}</td>
+                <td>{{ discount.get_discount_type_display }}</td>
+                <td>{{ discount.value }}</td>
+                <td>{{ discount.times_used }} / {{ discount.usage_limit|default:"Unlimited" }}</td>
+                <td>{{ discount.start_date }} - {{ discount.end_date }}</td>
+            </tr>
+
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endif %}
+
+
+<!-- INVOICE LIST -->
+
+{% if invoices %}
+
+<div class="content-card">
+
+    <h5 class="mb-3">Customer Invoices</h5>
+
+    <div class="table-responsive">
+
+        <table class="table align-middle">
+
+            <thead>
+                <tr>
+                    <th>Invoice No.</th>
+                    <th>Customer</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    {% if user.role != 'CUSTOMER' %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for invoice in invoices %}
+
+                <tr>
+
+                    <td>{{ invoice.invoice_number }}</td>
+
+                    <td>{{ invoice.customer.username }}</td>
+
+                    <td>{{ invoice.invoice_date }}</td>
+
+                    <td>{{ invoice.due_date }}</td>
+
+                    <td>₹{{ invoice.total_amount }}</td>
+
+                    <td>₹{{ invoice.amount_paid }}</td>
+
+                    <td>₹{{ invoice.balance_due }}</td>
+
+                    <td>
+
+                        {% if invoice.is_overdue %}
+                            <span class="badge bg-danger">Overdue</span>
+                        {% else %}
+                            <span class="badge bg-info">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        {% endif %}
+
+                    </td>
+
+                    {% if user.role != 'CUSTOMER' %}
+
+                    <td>
+
+                        {% if invoice.status == 'DRAFT' %}
+                        <form method="POST"
+                              action="{% url 'confirm_invoice' invoice.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-success">
+                                Confirm
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if invoice.status == 'CONFIRMED' or invoice.status == 'PARTIAL' %}
+
+                        <form method="POST"
+                              action="{% url 'record_payment' invoice.id %}"
+                              class="mt-2">
+
+                            {% csrf_token %}
+
+                            <input type="number"
+                                   name="amount"
+                                   step="0.01"
+                                   min="0.01"
+                                   max="{{ invoice.balance_due }}"
+                                   placeholder="Amount"
+                                   class="form-control form-control-sm mb-1"
+                                   required>
+
+                            <select name="payment_method"
+                                    class="form-select form-select-sm mb-1">
+                                <option value="UPI">UPI</option>
+                                <option value="CARD">Card</option>
+                                <option value="CASH">Cash</option>
+                                <option value="BANK">Bank Transfer</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+
+                            <input type="date"
+                                   name="payment_date"
+                                   class="form-control form-control-sm mb-1"
+                                   required>
+
+                            <input type="text"
+                                   name="reference_number"
+                                   placeholder="Reference number"
+                                   class="form-control form-control-sm mb-1">
+
+                            <button class="btn btn-sm btn-success">
+                                Record Payment
+                            </button>
+
+                        </form>
+
+                        {% endif %}
+
+                    </td>
+
+                    {% endif %}
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="9" class="text-center">
+                        No invoices found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

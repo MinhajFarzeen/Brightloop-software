@@ -1,0 +1,217 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Quotations | Brightloop{% endblock %}
+{% block breadcrumb %}Quotations{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Quotations</h2>
+        <p>Create and manage customer quotations.</p>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'quotation_templates' %}"
+           class="btn btn-outline-success">
+            Templates
+        </a>
+
+        <a href="{% url 'create_quotation' %}"
+           class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> New Quotation
+        </a>
+    </div>
+</div>
+
+{% if template_form %}
+
+<div class="content-card">
+
+    <h5>Create Quotation Template</h5>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Template Name</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Subscription Plan</label>
+            <select name="plan" class="form-select" required>
+                <option value="">Select Plan</option>
+
+                {% for plan in plans %}
+                <option value="{{ plan.id }}">
+                    {{ plan.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Validity (Days)</label>
+            <input type="number" name="validity_days"
+                   value="30" min="1" class="form-control">
+        </div>
+
+        <button class="btn btn-success">Create Template</button>
+    </form>
+
+</div>
+
+{% elif form %}
+
+<div class="content-card">
+
+    <h5>{{ action }}</h5>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+
+            {% for error in field.errors %}
+                <small class="text-danger d-block">{{ error }}</small>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <button class="btn btn-success">Create Quotation</button>
+
+    </form>
+
+</div>
+
+{% elif templates %}
+
+<div class="content-card">
+
+    <div class="d-flex justify-content-between mb-3">
+        <h5>Quotation Templates</h5>
+
+        <a href="{% url 'create_quotation_template' %}"
+           class="btn btn-success btn-sm">
+            Add Template
+        </a>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Template</th>
+                <th>Plan</th>
+                <th>Product</th>
+                <th>Validity</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for template in templates %}
+            <tr>
+                <td>{{ template.name }}</td>
+                <td>{{ template.plan.name }}</td>
+                <td>{{ template.plan.product.name }}</td>
+                <td>{{ template.validity_days }} days</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">
+                    No templates available.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% else %}
+
+<div class="content-card">
+
+    <div class="table-responsive">
+
+        <table class="table align-middle">
+
+            <thead>
+                <tr>
+                    <th>Quotation No.</th>
+                    <th>Customer</th>
+                    <th>Plan</th>
+                    <th>Quotation Date</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for quotation in quotations %}
+
+                <tr>
+                    <td>{{ quotation.quotation_number }}</td>
+                    <td>{{ quotation.customer.username }}</td>
+                    <td>{{ quotation.plan.name }}</td>
+                    <td>{{ quotation.quotation_date }}</td>
+                    <td>{{ quotation.valid_until }}</td>
+                    <td>{{ quotation.get_status_display }}</td>
+
+                    <td>
+                        {% if quotation.status == 'DRAFT' or quotation.status == 'SENT' %}
+
+                        <form method="POST"
+                              action="{% url 'confirm_quotation' quotation.id %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-primary">
+                                Confirm
+                            </button>
+                        </form>
+
+                        {% elif quotation.status == 'CONFIRMED' %}
+
+                        <form method="POST"
+                              action="{% url 'convert_quotation' quotation.id %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-success">
+                                Convert
+                            </button>
+                        </form>
+
+                        {% elif quotation.status == 'CONVERTED' %}
+                            <span class="badge bg-success">Converted</span>
+                        {% endif %}
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="7" class="text-center">
+                        No quotations available.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

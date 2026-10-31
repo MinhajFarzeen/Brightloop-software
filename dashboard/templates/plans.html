@@ -1,0 +1,122 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Plans | Brightloop{% endblock %}
+{% block breadcrumb %}Subscription Plans{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Subscription Plans</h2>
+        <p>Manage billing plans and pricing.</p>
+    </div>
+
+    {% if user.role == 'ADMIN' or user.is_superuser %}
+    <a href="{% url 'add_plan' %}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Add Plan
+    </a>
+    {% endif %}
+</div>
+
+{% if form %}
+
+<div class="content-card">
+    <h5>{{ action }}</h5>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+
+            {% for error in field.errors %}
+                <small class="text-danger d-block">{{ error }}</small>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <button class="btn btn-success" type="submit">Save Plan</button>
+        <a href="{% url 'plans' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+{% else %}
+
+<div class="row g-3">
+
+    {% for plan in plans %}
+
+    <div class="col-md-6 col-xl-4">
+
+        <div class="content-card h-100">
+
+            <h5>{{ plan.name }}</h5>
+
+            <p class="text-muted">{{ plan.product.name }}</p>
+
+            <h3>₹{{ plan.price }}</h3>
+
+            <p>Billing: {{ plan.get_billing_interval_display }}</p>
+
+            <p>Minimum quantity: {{ plan.minimum_quantity }}</p>
+
+            <p>
+                Available from: {{ plan.available_from }}
+            </p>
+
+            <p>
+                Available until:
+                {{ plan.available_until|default:"No end date" }}
+            </p>
+
+            <p>
+                {% if plan.auto_close %}
+                    <span class="badge bg-info">Auto close</span>
+                {% endif %}
+
+                {% if plan.is_active %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+            </p>
+
+            {% if user.role == 'ADMIN' or user.is_superuser %}
+            <a href="{% url 'edit_plan' plan.id %}"
+               class="btn btn-outline-primary btn-sm">
+                Edit
+            </a>
+
+            <form method="POST"
+                  action="{% url 'delete_plan' plan.id %}"
+                  class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('Delete this plan?')">
+                    Delete
+                </button>
+            </form>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    {% empty %}
+
+    <div class="col-12">
+        <div class="content-card text-center">
+            No subscription plans available.
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+{% endblock %}
